@@ -192,3 +192,188 @@ The following options are available:
       of many OIDC access tokens.
     - N
     - 300
+
+.. _oidc-group-sync:
+
+Synchronizing Groups From the Provider
+--------------------------------------
+
+Dataverse can keep a user's authorizations in step with the groups they hold on the OIDC
+provider, so that the provider stays the single source of truth for who may do what. The
+synchronization runs on every login, before the user is placed in the session, so a change
+of role is already in force for the login that follows it.
+
+This feature expects the provider's group tree to be laid out as follows, where
+``<parent>``, ``<tenants>`` and the role names are configurable:
+
+.. code-block:: none
+
+  /<parent>/admins                            -> Dataverse superuser
+  /<parent>/<tenants>/<tenant>/admins         -> "admin" role on the tenant's collection
+  /<parent>/<tenants>/<tenant>/curators       -> "curator" role on the tenant's collection
+  /<parent>/<tenants>/<tenant>/users          -> "member" role on the tenant's collection
+
+Each ``<tenant>`` group must carry an attribute (``dataverse-alias`` by default) holding the
+alias of the Dataverse collection it maps to. Groups that do not fit this shape are ignored.
+
+Rather than granting roles to users one by one, Dataverse mirrors each tenant role into an
+explicit group owned by the target collection, and grants the role to that group once. A
+login then only adds or removes the user from those groups, which needs no permission
+reindex and takes effect on the user's next request. Groups and role assignments created by
+hand are never touched: only groups carrying the configured prefix are managed.
+
+Requirements on the provider:
+
+- A **group membership mapper** on the Dataverse client, emitting full group paths into a
+  claim (``groups`` by default). Dataverse reads the userinfo endpoint, so the mapper's
+  **Add to userinfo** setting must be on; adding it to the tokens alone is not enough.
+- A **service account client** (``client_credentials`` grant) that Dataverse uses to read
+  group attributes, which the provider does not put into claims. On Keycloak the account
+  needs the ``view-users`` and ``query-groups`` realm-management roles, and nothing more.
+
+If the provider cannot be reached, or the group claim is absent, nothing is changed and a
+warning is logged. A missing claim is never treated as "member of no group", so a
+misconfigured mapper cannot silently strip everyone's permissions.
+
+.. list-table::
+  :widths: 25 55 10 10
+  :header-rows: 1
+  :align: left
+
+  * - Option
+    - Description
+    - Mandatory
+    - Default
+  * - ``dataverse.auth.oidc.sync.enabled``
+    - Enable synchronizing Dataverse authorizations from the provider's groups.
+    - N
+    - ``false``
+  * - ``dataverse.auth.oidc.sync.client-id``
+    - Client id of the service account used to read group attributes.
+    - Y
+    - \-
+  * - ``dataverse.auth.oidc.sync.client-secret``
+    - Client secret of that service account.
+    - Y
+    - \-
+  * - ``dataverse.auth.oidc.sync.server-url``
+    - Base URL of the provider, without the realm. Derived from ``auth-server-url`` when omitted.
+    - N
+    - \-
+  * - ``dataverse.auth.oidc.sync.realm``
+    - Realm name. Derived from ``auth-server-url`` when omitted.
+    - N
+    - \-
+  * - ``dataverse.auth.oidc.sync.groups-claim``
+    - Name of the claim carrying the full group paths.
+    - N
+    - ``groups``
+  * - ``dataverse.auth.oidc.sync.parent-group``
+    - Name of the top-level group holding the platform's groups.
+    - N
+    - ``platica``
+  * - ``dataverse.auth.oidc.sync.tenants-group``
+    - Name of the group, under the parent, holding one subgroup per tenant.
+    - N
+    - ``tenant-users``
+  * - ``dataverse.auth.oidc.sync.superuser-group``
+    - Name of the group, under the parent, whose members become Dataverse superusers.
+    - N
+    - ``admins``
+  * - ``dataverse.auth.oidc.sync.alias-attribute``
+    - Tenant group attribute holding the alias of the Dataverse collection it maps to.
+    - N
+    - ``dataverse-alias``
+  * - ``dataverse.auth.oidc.sync.group-prefix``
+    - Prefix of the explicit groups Dataverse manages. Groups without it are never modified.
+    - N
+    - ``kc``
+  * - ``dataverse.auth.oidc.sync.role-admin``
+    - Alias of the Dataverse role granted to a tenant's ``admins``.
+    - N
+    - ``admin``
+  * - ``dataverse.auth.oidc.sync.role-curator``
+    - Alias of the Dataverse role granted to a tenant's ``curators``.
+    - N
+    - ``curator``
+  * - ``dataverse.auth.oidc.sync.role-user``
+    - Alias of the Dataverse role granted to a tenant's ``users``.
+    - N
+    - ``member``
+  * - ``dataverse.auth.oidc.sync.protected-users``
+    - Comma-separated user identifiers that never lose superuser status, whatever the provider says.
+    - N
+    - ``dataverseAdmin``
+  * - ``dataverse.auth.oidc.sync.cache-max-age``
+    - Maximum age, in seconds, of cached group attributes.
+    - N
+    - 300
+  * - ``dataverse.auth.oidc.sync.interval-minutes``
+    - How often the reconciliation sweep runs. Set to ``0`` to sync at login only.
+    - N
+    - 15
+  * - ``dataverse.auth.oidc.sync.provider-id``
+    - Id of the authentication provider whose accounts the sweep owns. Leave unset: it is read
+      from the provider registry, which is safer than guessing (a provider configured through
+      MicroProfile Config is registered as ``oidc-mpconfig``, not ``oidc``).
+    - N
+    - auto-detected
+  * - ``dataverse.auth.oidc.sync.min-removals``
+    - A sweep may always remove at least this many memberships, whatever the ratio says.
+    - N
+    - 5
+  * - ``dataverse.auth.oidc.sync.max-removal-ratio``
+    - Fraction of existing memberships a single sweep may remove before it aborts.
+    - N
+    - 0.2
+
+Reconciliation Sweep
+~~~~~~~~~~~~~~~~~~~~
+
+Synchronizing at login only ever sees the person walking through the door. A user demoted on
+the provider who never logs in again would keep their authorizations indefinitely, so a timer
+periodically reconciles every tenant. Its interval is the installation's worst-case delay for
+a permission change to take effect.
+
+The sweep reads everything from the provider before writing anything, and skips -- leaving
+membership untouched -- any group it could not read. A failed read must never look like an
+empty group.
+
+The sweep matches provider accounts to Dataverse accounts by subject. If a group has members
+but none of them resolve to a Dataverse account, that is reported as an error and the group is
+left untouched: it means the provider id, realm or subject claim is wrong, and treating it as
+an empty group would revoke everyone in it.
+
+Superuser status is only ever revoked from accounts belonging to a synchronised provider.
+Builtin accounts and accounts from other providers are out of scope, so a service account
+never loses its privileges to this sweep.
+
+It also refuses to write when the change looks like a wipe: a sweep that would empty every
+managed group and add nobody is always refused, whatever the thresholds say. Beyond that, if a
+single sweep would remove more memberships than ``max-removal-ratio`` of the current total (with ``min-removals`` as an
+absolute floor), it logs the intended change at ``SEVERE`` and writes nothing. This is what
+stops a renamed group or a mistyped path from stripping everyone's permissions in one pass.
+Raising the thresholds is the deliberate way to push a large legitimate change through.
+
+Each group is written in its own transaction, so one unreachable tenant leaves the others
+reconciled rather than aborting the whole sweep.
+
+In a cluster the sweep only runs on the node started with ``-Ddataverse.timerServer=true``,
+the same rule the harvesting and saved-search timers follow.
+
+To run it immediately -- when testing a configuration change, or to force a revocation through
+without waiting out the interval:
+
+.. code-block:: bash
+
+  curl -X POST -H "X-Dataverse-key:$API_TOKEN" "$SERVER_URL/api/admin/oidc/sync"
+
+Users who exist on the provider but have never logged into Dataverse have no account yet, so
+the sweep cannot add them to anything. Their first login handles them.
+
+.. warning::
+
+  Revoking superuser status takes effect immediately only for the user logging in. Someone
+  who is already logged in keeps the flag until their session ends, because it is read from
+  the user object held in the session. Group-based roles do not have this problem: they are
+  resolved per request.
