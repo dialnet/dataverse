@@ -49,6 +49,10 @@ import java.util.stream.Collectors;
  * Each {@code <tenant>} group carries an attribute (by default {@code dataverse-alias})
  * holding the alias of the Dataverse collection it maps to.
  * <p>
+ * Being in a role group is not enough on its own: the role group must also carry the role
+ * attribute (by default {@code tenant_role_dataverse}), with any value. Without it the group
+ * grants nothing, so renaming the attribute switches that role off for the whole tenant.
+ * <p>
  * Rather than granting roles to users directly, we mirror each Keycloak tenant role into
  * an {@link ExplicitGroup} owned by the target collection, and grant the Dataverse role to
  * that group once. Syncing a login is then only a matter of adding or removing the user
@@ -145,6 +149,16 @@ public class KeycloakGroupSyncServiceBean {
             Set<String> desiredGroupAliases = new LinkedHashSet<>();
             Set<Long> provisioned = new HashSet<>();
             for (TenantAssignment assignment : parseTenantAssignments(groupPaths)) {
+                Optional<Boolean> enabled = isRoleGroupEnabled(assignment.roleGroupPath);
+                if (enabled.isEmpty()) {
+                    // Unknown is not "off": bail out so the catch below leaves everything as it was.
+                    throw new IllegalStateException("Could not read Keycloak group " + assignment.roleGroupPath);
+                }
+                if (!enabled.get()) {
+                    logger.fine(() -> "Keycloak group " + assignment.roleGroupPath + " has no '"
+                            + roleAttribute() + "' attribute; it grants nothing.");
+                    continue;
+                }
                 Optional<Dataverse> collection = resolveCollection(assignment.tenantGroupPath);
                 if (collection.isEmpty()) {
                     continue;
@@ -230,6 +244,18 @@ public class KeycloakGroupSyncServiceBean {
                 ExplicitGroup group = explicitGroupService.findInOwner(dataverse.getId(),
                         groupAliasInOwner(role.get()));
                 if (group == null) {
+                    continue;
+                }
+                String roleGroupPath = tenantPath + "/" + subgroup.getString("name");
+                Optional<Boolean> enabled = isRoleGroupEnabled(roleGroupPath);
+                if (enabled.isEmpty()) {
+                    logger.warning("Could not read " + roleGroupPath + "; leaving " + group.getAlias() + " untouched.");
+                    unreadable++;
+                    continue;
+                }
+                if (!enabled.get()) {
+                    // Switched off in Keycloak: its members no longer hold this role.
+                    desiredMembers.put(group.getAlias(), Set.of());
                     continue;
                 }
                 Optional<List<JsonObject>> members = keycloakAdmin.getGroupMembers(subgroupId);
@@ -513,15 +539,21 @@ public class KeycloakGroupSyncServiceBean {
     /** One "this user holds this role on this tenant" fact, as read from the group claim. */
     static final class TenantAssignment {
         private final String tenantGroupPath;
+        private final String roleGroupPath;
         private final TenantRole role;
 
-        private TenantAssignment(String tenantGroupPath, TenantRole role) {
+        private TenantAssignment(String tenantGroupPath, String roleGroupPath, TenantRole role) {
             this.tenantGroupPath = tenantGroupPath;
+            this.roleGroupPath = roleGroupPath;
             this.role = role;
         }
 
         String getTenantGroupPath() {
             return tenantGroupPath;
+        }
+
+        String getRoleGroupPath() {
+            return roleGroupPath;
         }
 
         TenantRole getRole() {
@@ -556,7 +588,8 @@ public class KeycloakGroupSyncServiceBean {
                 logger.fine(() -> "Ignoring unknown Keycloak tenant subgroup: " + path);
                 continue;
             }
-            assignments.add(new TenantAssignment(tenantsPrefix + remainder[0], role.get()));
+            String tenantGroupPath = tenantsPrefix + remainder[0];
+            assignments.add(new TenantAssignment(tenantGroupPath, tenantGroupPath + "/" + remainder[1], role.get()));
         }
         return assignments;
     }
@@ -566,6 +599,17 @@ public class KeycloakGroupSyncServiceBean {
      * Returns empty -- with a warning -- when the attribute is missing or points nowhere;
      * we never guess a collection.
      */
+    /**
+     * Whether membership of a tenant role group ({@code .../<tenant>/users} and the like) grants
+     * anything. It does only while the group carries the role attribute, whatever its value.
+     *
+     * @return empty when Keycloak could not be read, so callers can tell "off" from "unknown"
+     */
+    private Optional<Boolean> isRoleGroupEnabled(String roleGroupPath) {
+        return keycloakAdmin.getGroupByPath(roleGroupPath)
+                .map(group -> KeycloakAdminClient.hasAttribute(group, roleAttribute()));
+    }
+
     private Optional<Dataverse> resolveCollection(String tenantGroupPath) {
         Optional<String> alias = keycloakAdmin.getGroupAttribute(tenantGroupPath, aliasAttribute());
         if (alias.isEmpty()) {
@@ -777,6 +821,10 @@ public class KeycloakGroupSyncServiceBean {
 
     private String aliasAttribute() {
         return JvmSettings.OIDC_SYNC_ALIAS_ATTRIBUTE.lookupOptional().orElse("dataverse-alias");
+    }
+
+    private String roleAttribute() {
+        return JvmSettings.OIDC_SYNC_ROLE_ATTRIBUTE.lookupOptional().orElse("tenant_role_dataverse");
     }
 
     private String groupPrefix() {

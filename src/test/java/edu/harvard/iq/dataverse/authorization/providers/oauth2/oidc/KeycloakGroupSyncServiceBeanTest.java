@@ -3,9 +3,12 @@ package edu.harvard.iq.dataverse.authorization.providers.oauth2.oidc;
 import edu.harvard.iq.dataverse.settings.JvmSettings;
 import edu.harvard.iq.dataverse.util.testing.JvmSetting;
 import edu.harvard.iq.dataverse.util.testing.LocalJvmSettings;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.io.StringReader;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,7 +36,15 @@ class KeycloakGroupSyncServiceBeanTest {
 
             assertEquals(1, assignments.size());
             assertEquals("platica/tenant-users/tenant-1", assignments.get(0).getTenantGroupPath());
+            assertEquals("platica/tenant-users/tenant-1/admins", assignments.get(0).getRoleGroupPath());
             assertEquals(KeycloakGroupSyncServiceBean.TenantRole.ADMIN, assignments.get(0).getRole());
+        }
+
+        @Test
+        void keepsTheRoleGroupNameAsKeycloakSpellsIt() {
+            // The role is matched case-insensitively, but the path is used to look the group up.
+            assertEquals("platica/tenant-users/tenant-1/Users",
+                    sut.parseTenantAssignments(List.of("/platica/tenant-users/tenant-1/Users")).get(0).getRoleGroupPath());
         }
 
         @Test
@@ -175,6 +186,35 @@ class KeycloakGroupSyncServiceBeanTest {
             assertEquals("a/b/c", KeycloakAdminClient.normalisePath("/a/b/c"));
             assertEquals("a/b/c", KeycloakAdminClient.normalisePath("a/b/c/"));
             assertEquals("a/b/c", KeycloakAdminClient.normalisePath("  //a/b/c//  "));
+        }
+    }
+
+    @Nested
+    @LocalJvmSettings
+    class HasAttribute {
+
+        private JsonObject group(String json) {
+            return Json.createReader(new StringReader(json)).readObject();
+        }
+
+        @Test
+        void isOnWhateverTheValue() {
+            assertTrue(KeycloakAdminClient.hasAttribute(
+                    group("{\"attributes\":{\"tenant_role_dataverse\":[\"1\"]}}"), "tenant_role_dataverse"));
+            assertTrue(KeycloakAdminClient.hasAttribute(
+                    group("{\"attributes\":{\"tenant_role_dataverse\":[\"anything\"]}}"), "tenant_role_dataverse"));
+        }
+
+        @Test
+        void isOffOnceRenamed() {
+            assertFalse(KeycloakAdminClient.hasAttribute(
+                    group("{\"attributes\":{\"tenant_role_dataverse_disabled\":[\"1\"]}}"), "tenant_role_dataverse"));
+        }
+
+        @Test
+        void isOffWithoutAttributes() {
+            assertFalse(KeycloakAdminClient.hasAttribute(group("{\"name\":\"users\"}"), "tenant_role_dataverse"));
+            assertFalse(KeycloakAdminClient.hasAttribute(group("{\"attributes\":{}}"), "tenant_role_dataverse"));
         }
     }
 }

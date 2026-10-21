@@ -284,6 +284,12 @@ misconfigured mapper cannot silently strip everyone's permissions.
     - Tenant group attribute holding the alias of the Dataverse collection it maps to.
     - N
     - ``dataverse-alias``
+  * - ``dataverse.auth.oidc.sync.role-attribute``
+    - Attribute a tenant's ``admins``, ``curators`` or ``users`` group must carry, with any value,
+      for its membership to grant the role. Without it the group grants nothing, so renaming the
+      attribute (e.g. to ``tenant_role_dataverse_disabled``) switches that role off.
+    - N
+    - ``tenant_role_dataverse``
   * - ``dataverse.auth.oidc.sync.group-prefix``
     - Prefix of the explicit groups Dataverse manages. Groups without it are never modified.
     - N

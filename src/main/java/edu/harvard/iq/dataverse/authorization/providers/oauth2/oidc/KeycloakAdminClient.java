@@ -129,6 +129,14 @@ public class KeycloakAdminClient {
     }
 
     /**
+     * Whether a group carries an attribute at all, whatever its value.
+     */
+    static boolean hasAttribute(JsonObject group, String attributeName) {
+        JsonObject attributes = group.getJsonObject("attributes");
+        return attributes != null && attributes.containsKey(attributeName);
+    }
+
+    /**
      * List the direct subgroups of a group, by full path.
      * <p>
      * Keycloak moved this around: older versions inline {@code subGroups} in the group

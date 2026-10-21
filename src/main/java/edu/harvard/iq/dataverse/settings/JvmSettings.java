@@ -270,6 +270,7 @@ public enum JvmSettings {
     OIDC_SYNC_TENANTS_GROUP(SCOPE_OIDC_SYNC, "tenants-group"),
     OIDC_SYNC_SUPERUSER_GROUP(SCOPE_OIDC_SYNC, "superuser-group"),
     OIDC_SYNC_ALIAS_ATTRIBUTE(SCOPE_OIDC_SYNC, "alias-attribute"),
+    OIDC_SYNC_ROLE_ATTRIBUTE(SCOPE_OIDC_SYNC, "role-attribute"),
     OIDC_SYNC_GROUP_PREFIX(SCOPE_OIDC_SYNC, "group-prefix"),
     OIDC_SYNC_ROLE_ADMIN(SCOPE_OIDC_SYNC, "role-admin"),
     OIDC_SYNC_ROLE_CURATOR(SCOPE_OIDC_SYNC, "role-curator"),
