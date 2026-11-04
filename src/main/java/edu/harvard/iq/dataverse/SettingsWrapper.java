@@ -15,6 +15,7 @@ import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean.Key;
 import edu.harvard.iq.dataverse.util.BundleUtil;
 import edu.harvard.iq.dataverse.util.ListSplitUtil;
+import edu.harvard.iq.dataverse.util.PlaticaNavbarUtil;
 import edu.harvard.iq.dataverse.util.StringUtil;
 import edu.harvard.iq.dataverse.util.SystemConfig;
 import edu.harvard.iq.dataverse.UserNotification.Type;
@@ -477,6 +478,40 @@ public class SettingsWrapper implements java.io.Serializable {
             settingsService.initLocaleSettings(configuredLocales); 
         }
         return configuredLocales;
+    }
+
+    // PLATICA common header widget (see PlaticaNavbarUtil)
+
+    public boolean isPlaticaNavbarEnabled() {
+        return PlaticaNavbarUtil.isNavbarEnabled();
+    }
+
+    public String getPlaticaNavbarScriptUrl() {
+        return PlaticaNavbarUtil.getNavbarScriptUrl().orElse(null);
+    }
+
+    public String getPlaticaProfileUrl() {
+        return PlaticaNavbarUtil.getProfileUrl();
+    }
+
+    public String getPlaticaKeycloakUrl() {
+        return PlaticaNavbarUtil.getKeycloakLocation().map(PlaticaNavbarUtil.KeycloakLocation::url).orElse(null);
+    }
+
+    public String getPlaticaKeycloakRealm() {
+        return PlaticaNavbarUtil.getKeycloakLocation().map(PlaticaNavbarUtil.KeycloakLocation::realm).orElse(null);
+    }
+
+    public String getPlaticaKeycloakClientId() {
+        return PlaticaNavbarUtil.getKeycloakClientId().orElse(null);
+    }
+
+    public String getLocaleCookieName() {
+        return PlaticaNavbarUtil.getLocaleCookieName();
+    }
+
+    public String getLocaleCookieDomain() {
+        return PlaticaNavbarUtil.getLocaleCookieDomain().orElse(null);
     }
     
 

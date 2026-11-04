@@ -270,6 +270,11 @@ public enum JvmSettings {
     UI_SHOW_CURATION_STATUS_TO_ALL(SCOPE_UI, "show-curation-status-to-all"),
     UI_LOCALE_COOKIE_NAME(SCOPE_UI, "locale-cookie-name"),
     UI_LOCALE_COOKIE_DOMAIN(SCOPE_UI, "locale-cookie-domain"),
+    // UI: PLATICA common header widget (navbar-root)
+    SCOPE_UI_PLATICA(SCOPE_UI, "platica"),
+    UI_PLATICA_NAVBAR_SCRIPT_URL(SCOPE_UI_PLATICA, "navbar-script-url"),
+    UI_PLATICA_PROFILE_URL(SCOPE_UI_PLATICA, "profile-url"),
+    UI_PLATICA_KEYCLOAK_CLIENT_ID(SCOPE_UI_PLATICA, "keycloak-client-id"),
 
     // NetCDF SETTINGS
     SCOPE_NETCDF(PREFIX, "netcdf"),
