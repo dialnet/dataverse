@@ -38,7 +38,7 @@ class PlaticaNavbarUtilTest {
 
     @Test
     void nonBlankTrimsValues() {
-        assertEquals(Optional.of("webapp"), PlaticaNavbarUtil.nonBlank(Optional.of("  webapp ")));
+        assertEquals(Optional.of("dataverse-client-public"), PlaticaNavbarUtil.nonBlank(Optional.of("  dataverse-client-public ")));
     }
 
     @Test
@@ -75,9 +75,9 @@ class PlaticaNavbarUtilTest {
     }
 
     @Test
-    @JvmSetting(key = JvmSettings.UI_PLATICA_KEYCLOAK_CLIENT_ID, value = "webapp")
+    @JvmSetting(key = JvmSettings.UI_PLATICA_KEYCLOAK_CLIENT_ID, value = "dataverse-client-public")
     void keycloakClientIdIsRead() {
-        assertEquals(Optional.of("webapp"), PlaticaNavbarUtil.getKeycloakClientId());
+        assertEquals(Optional.of("dataverse-client-public"), PlaticaNavbarUtil.getKeycloakClientId());
     }
 
     @Test
@@ -152,17 +152,20 @@ class PlaticaNavbarUtilTest {
     @Test
     void languagesJsonKeepsOrderAndNormalizesCase() {
         Map<String, String> locales = new LinkedHashMap<>();
+        // Same languages PLATICA uses; "EN" checks case normalization
         locales.put("es", "Español");
         locales.put("EN", "English");
+        locales.put("ca", "Català");
         locales.put("gl", "Galego");
+        locales.put("eu", "Euskara");
 
         JsonArray languages = JsonUtil.getJsonArray(PlaticaNavbarUtil.toLanguagesJson(locales));
-        assertEquals(3, languages.size());
-        assertEquals("ES", languages.getJsonObject(0).getString("label"));
-        assertEquals("es", languages.getJsonObject(0).getString("value"));
-        assertEquals("EN", languages.getJsonObject(1).getString("label"));
-        assertEquals("en", languages.getJsonObject(1).getString("value"));
-        assertEquals("gl", languages.getJsonObject(2).getString("value"));
+        String[] expected = {"es", "en", "ca", "gl", "eu"};
+        assertEquals(expected.length, languages.size());
+        for (int i = 0; i < expected.length; i++) {
+            assertEquals(expected[i].toUpperCase(), languages.getJsonObject(i).getString("label"));
+            assertEquals(expected[i], languages.getJsonObject(i).getString("value"));
+        }
     }
 
     @Test

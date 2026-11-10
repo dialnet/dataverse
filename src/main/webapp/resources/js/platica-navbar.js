@@ -129,12 +129,27 @@
         }
     }
 
+    // Browsers silently drop a cookie whose Domain doesn't match the page's host (e.g. Domain=rediris.es on
+    // localhost), so the configured domain is only used when the page is actually served under it.
+    function cookieDomainFor(hostname, configuredDomain) {
+        var domain = (configuredDomain || '').replace(/^\./, '').toLowerCase();
+        var host = hostname.toLowerCase();
+        if (domain && (host === domain || host.slice(-(domain.length + 1)) === '.' + domain)) {
+            return domain;
+        }
+        return null;
+    }
+
     // Same cookie Dataverse reads (DataverseSession.getLocaleCode) and PLATICA web / OpenCDMP share
     function writeLocaleCookie(config, code) {
         var cookie = encodeURIComponent(config.cookieName) + '=' + encodeURIComponent(code)
             + '; Path=/; Max-Age=' + LOCALE_COOKIE_MAX_AGE + '; SameSite=Lax';
-        if (config.cookieDomain) {
-            cookie += '; Domain=' + config.cookieDomain;
+        var domain = cookieDomainFor(window.location.hostname, config.cookieDomain);
+        if (domain) {
+            cookie += '; Domain=' + domain;
+        } else if (config.cookieDomain) {
+            warn('cookie domain ' + config.cookieDomain + ' does not match ' + window.location.hostname
+                + '; writing a host-only cookie');
         }
         if (window.location.protocol === 'https:') {
             cookie += '; Secure';
