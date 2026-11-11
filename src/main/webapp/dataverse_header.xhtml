@@ -97,6 +97,7 @@
                                 </o:form>
                             </li>
                         </ui:fragment>
+                        <ui:fragment rendered="#{!settingsWrapper.platicaNavbarEnabled}">
                         <li class="dropdown" jsf:rendered="#{settingsWrapper.localesConfigured}">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown" title="#{bundle.language}">#{dataverseSession.localeTitle} <b class="caret"></b></a>
                             <ul class="dropdown-menu navbar-language">
@@ -183,6 +184,32 @@
                                         </o:form>
                                     </li>
                                 </ul>
+                            </li>
+                        </ui:fragment>
+                        </ui:fragment>
+                        <!-- PLATICA common header widget: replaces language selector, login and account menu (see platica-navbar.js) -->
+                        <ui:fragment rendered="#{settingsWrapper.platicaNavbarEnabled}">
+                            <li class="platica-navbar-item">
+                                <navbar-root id="platica-navbar"
+                                             languages="#{dataverseHeaderFragment.platicaNavbarLanguagesJson}"
+                                             language="#{dataverseSession.localeCode}"
+                                             selected-lang="#{dataverseSession.localeCode}"
+                                             menu-items="#{dataverseHeaderFragment.platicaNavbarMenuItemsJson}"
+                                             data-script-url="#{settingsWrapper.platicaNavbarScriptUrl}"
+                                             data-authenticated="#{dataverseSession.user.authenticated}"
+                                             data-login-url="/loginpage.xhtml#{loginRedirectPage}"
+                                             data-keycloak-url="#{settingsWrapper.platicaKeycloakUrl}"
+                                             data-keycloak-realm="#{settingsWrapper.platicaKeycloakRealm}"
+                                             data-keycloak-client-id="#{settingsWrapper.platicaKeycloakClientId}"
+                                             data-cookie-name="#{settingsWrapper.localeCookieName}"
+                                             data-cookie-domain="#{settingsWrapper.localeCookieDomain}"></navbar-root>
+                                <!-- Logout: the widget only requests sign-out; this JSF action also ends the OIDC session.
+                                     Hidden, unless the widget can't get the user's session (platica-navbar.js shows it as a fallback). -->
+                                <o:form useRequestURI="true" pt:role="logout" class="platica-logout-fallback" style="display:none" rendered="#{dataverseSession.user.authenticated}">
+                                    <h:commandLink action="#{dataverseHeaderFragment.logout}" id="lnk_platica_logout">
+                                        <h:outputText value="#{bundle['header.logOut']}" />
+                                    </h:commandLink>
+                                </o:form>
                             </li>
                         </ui:fragment>
                     </ul>

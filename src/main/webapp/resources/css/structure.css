@@ -63,6 +63,18 @@ a:not(.btn):active, .ui-widget-content a:not(.btn):active {color: #e5630d;}
 #navbarFixed .dropdown.accountName .logout form {margin:0; padding:0; width:100%;}
 #navbarFixed .dropdown.accountName .logout a {clear: both; color: #333333; display: block; font-weight: normal; line-height: 1.42857; padding: 3px 20px; white-space: nowrap; text-decoration: none;}
 #navbarFixed li.dropdown.open > span.dropdown-toggle {background-color: #e7e7e7;}
+/* PLATICA common header: 80px bar like OpenCDMP's, with the same space above and below its content (the 56px
+   widget gets 12px on each side). Only above 992px, where Dataverse's navbar isn't collapsed (see COLLAPSE-NAVBAR). */
+@media (min-width: 993px) {
+    html {scroll-padding-top:92px;} /* anchor jumps land below the fixed bar */
+    #navbarFixed.navbar-fixed-top {min-height:80px;}
+    #navbarFixed .navbar-header, #navbarFixed .platica-navbar-item {height:80px; display:flex; align-items:center;}
+    #navbarFixed .platica-navbar-item {padding:0 .75rem; flex-shrink:0;}
+    /* Logout fallback shown by platica-navbar.js when the widget has no session for a logged-in user */
+    #navbarFixed .platica-logout-fallback {margin:0 0 0 .75rem; white-space:nowrap;}
+    /* Text links: 20px line-height + 2 x 30px = 80px */
+    #navbarFixed .navbar-nav > li > a, #navbarFixed form.navbar-form-link a.ui-commandlink {padding-top:30px; padding-bottom:30px;}
+}
 
 #status-alert {margin-top:0; margin-bottom:0;}
 #status-alert div.alert {border:0; box-shadow:none;}
@@ -251,6 +263,12 @@ a.tooltip-icon:hover, a.tool-tip:focus, a.tool-tip:active {text-decoration: none
 /* -------- HEADER -------- */
 #dataverse-header-block {padding-top:50px;}
 body.widget-view #dataverse-header-block {padding-top:0px;}
+/* PLATICA common header: must come after the rule above to override it. 82px = 80px bar + Bootstrap's 1px top
+   and bottom borders; plus a 10px gap before the page content. Same breakpoint as the 80px bar. */
+@media (min-width: 993px) {
+    #dataverse-header-block {padding-top:92px;}
+    body.widget-view #dataverse-header-block {padding-top:0px;}
+}
 #dataverseHeader {margin:0 auto;}
 #dataverseHeader .dataverseHeaderBlock {display:table-row;}
 #dataverseHeader .dataverseHeaderCell {display:table-cell;}
@@ -427,6 +445,13 @@ a.ui-widget.btn.btn-default:hover, a.ui-widget.btn.btn-default:focus, a.ui-widge
 .btn-group.btn-group-justified {display: flex; gap: .5em;}
 .btn-group.btn-group-justified > .btn {flex: 1 1 0; display: block; width: auto; margin-left: 0; border-radius: 50rem !important;}
 .btn-group.btn-group-justified > .btn-group {flex: 1 1 0; display: block; width: auto;}
+/* PLATICA theme: a button group that nests other button groups (e.g. the collection page's Publish / Link / Edit)
+   shows separate pills with a gap instead of one joined shape; !important beats Bootstrap's nested-group corner
+   rules. Justified groups are handled above. */
+.btn-group:not(.btn-group-justified) > .btn-group > .btn,
+.btn-group:not(.btn-group-justified) > .btn:has(~ .btn-group) {border-radius: 50rem !important;}
+.btn-group:not(.btn-group-justified) > .btn-group + .btn-group,
+.btn-group:not(.btn-group-justified) > .btn + .btn-group {margin-left: .5em;}
 /* PLATICA theme: focused buttons get a 3px black border */
 .btn:focus, .btn:focus-visible, a.ui-widget.btn:focus {border: 3px solid #000; outline: none;}
 .col-manage-action .button-block button, .col-manage-action .button-block a.btn, .col-manage-action .button-block input.btn,

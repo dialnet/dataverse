@@ -89,6 +89,9 @@
         <ui:fragment rendered="#{settingsWrapper.shibPassiveLoginEnabled}">
             <script defer="defer" src="#{resource['js/shib/isPassive.js']}"></script>
         </ui:fragment>
+        <ui:fragment rendered="#{settingsWrapper.platicaNavbarEnabled and !widgetWrapper.widgetView}">
+            <script defer="defer" src="#{resource['js/platica-navbar.js']}?version=#{settingsWrapper.appVersion}"></script>
+        </ui:fragment>
         <script>
             //<![CDATA[
             $(document).ready(function () {
