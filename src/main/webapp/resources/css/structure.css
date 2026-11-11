@@ -445,6 +445,13 @@ a.ui-widget.btn.btn-default:hover, a.ui-widget.btn.btn-default:focus, a.ui-widge
 .btn-group.btn-group-justified {display: flex; gap: .5em;}
 .btn-group.btn-group-justified > .btn {flex: 1 1 0; display: block; width: auto; margin-left: 0; border-radius: 50rem !important;}
 .btn-group.btn-group-justified > .btn-group {flex: 1 1 0; display: block; width: auto;}
+/* PLATICA theme: a button group that nests other button groups (e.g. the collection page's Publish / Link / Edit)
+   shows separate pills with a gap instead of one joined shape; !important beats Bootstrap's nested-group corner
+   rules. Justified groups are handled above. */
+.btn-group:not(.btn-group-justified) > .btn-group > .btn,
+.btn-group:not(.btn-group-justified) > .btn:has(~ .btn-group) {border-radius: 50rem !important;}
+.btn-group:not(.btn-group-justified) > .btn-group + .btn-group,
+.btn-group:not(.btn-group-justified) > .btn + .btn-group {margin-left: .5em;}
 /* PLATICA theme: focused buttons get a 3px black border */
 .btn:focus, .btn:focus-visible, a.ui-widget.btn:focus {border: 3px solid #000; outline: none;}
 .col-manage-action .button-block button, .col-manage-action .button-block a.btn, .col-manage-action .button-block input.btn,
