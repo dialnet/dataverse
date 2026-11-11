@@ -70,6 +70,8 @@ a:not(.btn):active, .ui-widget-content a:not(.btn):active {color: #e5630d;}
     #navbarFixed.navbar-fixed-top {min-height:80px;}
     #navbarFixed .navbar-header, #navbarFixed .platica-navbar-item {height:80px; display:flex; align-items:center;}
     #navbarFixed .platica-navbar-item {padding:0 .75rem; flex-shrink:0;}
+    /* Logout fallback shown by platica-navbar.js when the widget has no session for a logged-in user */
+    #navbarFixed .platica-logout-fallback {margin:0 0 0 .75rem; white-space:nowrap;}
     /* Text links: 20px line-height + 2 x 30px = 80px */
     #navbarFixed .navbar-nav > li > a, #navbarFixed form.navbar-form-link a.ui-commandlink {padding-top:30px; padding-bottom:30px;}
     #dataverse-header-block {padding-top:80px;}

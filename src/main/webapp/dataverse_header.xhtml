@@ -203,8 +203,9 @@
                                              data-keycloak-client-id="#{settingsWrapper.platicaKeycloakClientId}"
                                              data-cookie-name="#{settingsWrapper.localeCookieName}"
                                              data-cookie-domain="#{settingsWrapper.localeCookieDomain}"></navbar-root>
-                                <!-- Hidden logout: the widget only requests sign-out; this JSF action also ends the OIDC session -->
-                                <o:form useRequestURI="true" pt:role="logout" style="display:none" rendered="#{dataverseSession.user.authenticated}">
+                                <!-- Logout: the widget only requests sign-out; this JSF action also ends the OIDC session.
+                                     Hidden, unless the widget can't get the user's session (platica-navbar.js shows it as a fallback). -->
+                                <o:form useRequestURI="true" pt:role="logout" class="platica-logout-fallback" style="display:none" rendered="#{dataverseSession.user.authenticated}">
                                     <h:commandLink action="#{dataverseHeaderFragment.logout}" id="lnk_platica_logout">
                                         <h:outputText value="#{bundle['header.logOut']}" />
                                     </h:commandLink>

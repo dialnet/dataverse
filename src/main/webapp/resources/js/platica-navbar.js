@@ -27,6 +27,19 @@
         }
     }
 
+    /*
+     * Dataverse's own logout link is replaced by the widget's. If the widget can't get the session of a
+     * user who is logged in to Dataverse, it shows "sign in" instead, so this shows the (normally hidden)
+     * logout link next to it to keep a way out.
+     */
+    function showLogoutFallback(reason) {
+        var form = document.querySelector('form.platica-logout-fallback');
+        if (form && form.style.display === 'none') {
+            form.style.display = '';
+            warn('showing the logout link: ' + reason);
+        }
+    }
+
     function loadWidget(scriptUrl) {
         if (document.querySelector('script[data-platica-navbar]')) {
             return;
@@ -95,11 +108,13 @@
             keycloak.onAuthRefreshSuccess = setToken;
             keycloak.onAuthRefreshError = function () {
                 widget.accessToken = undefined;
+                showLogoutFallback('the access token could not be refreshed');
             };
             keycloak.onTokenExpired = function () {
                 keycloak.updateToken(TOKEN_MIN_VALIDITY_SECONDS).catch(function (error) {
                     warn('could not refresh the access token', error);
                     widget.accessToken = undefined;
+                    showLogoutFallback('the access token could not be refreshed');
                 });
             };
             return keycloak.init({
@@ -112,10 +127,12 @@
                     setToken();
                 } else {
                     warn('no Keycloak session found; the widget will show the guest state');
+                    showLogoutFallback('no Keycloak session');
                 }
             });
         }).catch(function (error) {
             warn('could not get an access token for the widget', error);
+            showLogoutFallback('no access token');
         });
     }
 
@@ -213,6 +230,9 @@
         // Menu items are real links that navigate by themselves; nothing to do on menuItemClick.
         widget.addEventListener('platformBackendError', function (event) {
             warn('backend error', event.detail);
+            if (config.authenticated) {
+                showLogoutFallback('the widget could not load the session');
+            }
         });
 
         loadWidget(config.scriptUrl);
@@ -228,6 +248,7 @@
             } else {
                 warn('Keycloak is not configured (dataverse.ui.platica.keycloak-client-id / dataverse.auth.oidc.auth-server-url);'
                     + ' the widget will show the guest state');
+                showLogoutFallback('Keycloak is not configured');
             }
         });
     }
