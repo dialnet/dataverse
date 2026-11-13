@@ -96,7 +96,6 @@ public enum JvmSettings {
     // API: MDC Citation updates
     SCOPE_API_MDC(SCOPE_API, "mdc"),
     API_MDC_UPDATE_MIN_DELAY_MS(SCOPE_API_MDC, "min-delay-ms"),
-    
 
     // SIGNPOSTING SETTINGS
     SCOPE_SIGNPOSTING(PREFIX, "signposting"),
@@ -108,6 +107,10 @@ public enum JvmSettings {
     // This is a special placeholder-type setting entry, to be filled in by FeatureFlag entries during lookup.
     // Avoids adding flag entries twice.
     FEATURE_FLAG(SCOPE_FLAGS),
+    
+    // LEGACY BEHAVIOUR SETTINGS
+    SCOPE_LEGACY(PREFIX, "legacy"),
+    LEGACY_API_RESPONSE_MESSAGE_STYLE(SCOPE_LEGACY, "api-response-message-style"),
     
     // METADATA SETTINGS
     SCOPE_METADATA(PREFIX, "metadata"),
@@ -290,6 +293,11 @@ public enum JvmSettings {
     UI_SHOW_CURATION_STATUS_TO_ALL(SCOPE_UI, "show-curation-status-to-all"),
     UI_LOCALE_COOKIE_NAME(SCOPE_UI, "locale-cookie-name"),
     UI_LOCALE_COOKIE_DOMAIN(SCOPE_UI, "locale-cookie-domain"),
+    // UI: PLATICA common header widget (navbar-root)
+    SCOPE_UI_PLATICA(SCOPE_UI, "platica"),
+    UI_PLATICA_NAVBAR_SCRIPT_URL(SCOPE_UI_PLATICA, "navbar-script-url"),
+    UI_PLATICA_PROFILE_URL(SCOPE_UI_PLATICA, "profile-url"),
+    UI_PLATICA_KEYCLOAK_CLIENT_ID(SCOPE_UI_PLATICA, "keycloak-client-id"),
 
     // NetCDF SETTINGS
     SCOPE_NETCDF(PREFIX, "netcdf"),
@@ -334,7 +342,6 @@ public enum JvmSettings {
     LOCALCONTEXTS_API_KEY(SCOPE_LOCALCONTEXTS, "api-key"),
 
     // LEGACY SETTINGS
-    SCOPE_LEGACY(PREFIX, "legacy"),
     SCHEMAORG_IN_HTML_HEAD(SCOPE_LEGACY, "schemaorg-in-html-head"),
     
     // LinkedDataNotification
@@ -343,7 +350,7 @@ public enum JvmSettings {
     SCOPE_COARNOTIFY(SCOPE_LINKEDDATANOTIFICATION, "coar-notify"),
     SCOPE_COARNOTIFY_RELATIONSHIP_ANNOUNCEMENT(SCOPE_COARNOTIFY, "relationship-announcement"),
     COARNOTIFY_RELATIONSHIP_ANNOUNCEMENT_NOTIFY_SUPERUSERS_ONLY(SCOPE_COARNOTIFY_RELATIONSHIP_ANNOUNCEMENT, "notify-superusers-only"),
-    ;
+   ;
 
     private static final String SCOPE_SEPARATOR = ".";
     public static final String PLACEHOLDER_KEY = "%s";

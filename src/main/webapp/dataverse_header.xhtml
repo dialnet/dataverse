@@ -87,7 +87,7 @@
                         <ui:fragment rendered="#{empty settingsWrapper.get(':NavbarSupportUrl')}">
                             <li>
                                 <o:form useRequestURI="true" class="navbar-form navbar-left navbar-form-link">
-                                    <p:commandLink oncomplete="PF('contactForm').show()" update=":contactDialog" actionListener="#{sendFeedbackDialog.initUserInput}" id="headerSupportLink">
+                                    <p:commandLink oncomplete="PF('contactForm').show()" update=":contactDialog" actionListener="#{sendFeedbackDialog.initUserInput}" id="headerSupportLink" process="@this">
                                         <f:setPropertyActionListener target="#{sendFeedbackDialog.messageSubject}" value=""/>
                                         <f:setPropertyActionListener target="#{sendFeedbackDialog.recipient}" value="#{null}"/>
                                         <f:setPropertyActionListener target="#{sendFeedbackDialog.userMessage}" value=""/>
@@ -97,6 +97,7 @@
                                 </o:form>
                             </li>
                         </ui:fragment>
+                        <ui:fragment rendered="#{!settingsWrapper.platicaNavbarEnabled}">
                         <li class="dropdown" jsf:rendered="#{settingsWrapper.localesConfigured}">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown" title="#{bundle.language}">#{dataverseSession.localeTitle} <b class="caret"></b></a>
                             <ul class="dropdown-menu navbar-language">
@@ -185,6 +186,32 @@
                                 </ul>
                             </li>
                         </ui:fragment>
+                        </ui:fragment>
+                        <!-- PLATICA common header widget: replaces language selector, login and account menu (see platica-navbar.js) -->
+                        <ui:fragment rendered="#{settingsWrapper.platicaNavbarEnabled}">
+                            <li class="platica-navbar-item">
+                                <navbar-root id="platica-navbar"
+                                             languages="#{dataverseHeaderFragment.platicaNavbarLanguagesJson}"
+                                             language="#{dataverseSession.localeCode}"
+                                             selected-lang="#{dataverseSession.localeCode}"
+                                             menu-items="#{dataverseHeaderFragment.platicaNavbarMenuItemsJson}"
+                                             data-script-url="#{settingsWrapper.platicaNavbarScriptUrl}"
+                                             data-authenticated="#{dataverseSession.user.authenticated}"
+                                             data-login-url="/loginpage.xhtml#{loginRedirectPage}"
+                                             data-keycloak-url="#{settingsWrapper.platicaKeycloakUrl}"
+                                             data-keycloak-realm="#{settingsWrapper.platicaKeycloakRealm}"
+                                             data-keycloak-client-id="#{settingsWrapper.platicaKeycloakClientId}"
+                                             data-cookie-name="#{settingsWrapper.localeCookieName}"
+                                             data-cookie-domain="#{settingsWrapper.localeCookieDomain}"></navbar-root>
+                                <!-- Logout: the widget only requests sign-out; this JSF action also ends the OIDC session.
+                                     Hidden, unless the widget can't get the user's session (platica-navbar.js shows it as a fallback). -->
+                                <o:form useRequestURI="true" pt:role="logout" class="platica-logout-fallback" style="display:none" rendered="#{dataverseSession.user.authenticated}">
+                                    <h:commandLink action="#{dataverseHeaderFragment.logout}" id="lnk_platica_logout">
+                                        <h:outputText value="#{bundle['header.logOut']}" />
+                                    </h:commandLink>
+                                </o:form>
+                            </li>
+                        </ui:fragment>
                     </ul>
                 </div>
             </div>
@@ -203,7 +230,7 @@
                 <ui:repeat value="#{dataverseHeaderFragment.bannerMessages}" var="message" varStatus="status">                
                     <div id="status-alert" class="bg-warning" jsf:rendered="#{!empty message.displayValue }">
                         <div class="alert alert-dismissible container text-warning">
-                            <p:commandButton class="close" id="closeButton" actionListener="#{dataverseSession.dismissMessage(message)}" update="@form" value="&#215;"/>
+                            <p:commandButton class="close" id="closeButton" actionListener="#{dataverseSession.dismissMessage(message)}" update="@form" value="&#215;" process="@this"/>
                             <h:outputText rendered="#{!empty message.displayValue }" value=" #{message.displayValue }" escape="false"/>
                         </div>
                     </div>
@@ -233,6 +260,7 @@
                     <a href="/dataverse/#{dataverse.alias}" class="dataverseHeaderDataverseName" style="color:##{!empty dataverse.dataverseTheme.linkColor ? dataverse.dataverseTheme.linkColor : '428bca'};"><h1>#{dataverse.name}</h1></a>
                     <h:outputText style="color:##{!empty dataverse.dataverseTheme.textColor ? dataverse.dataverseTheme.textColor : '666666'};" value=" (#{dataverse.affiliation})" rendered="#{!empty dataverse.affiliation}"/>
                     <h:outputText value="#{bundle.unpublished}" styleClass="label label-warning label-unpublished" rendered="#{!dataverse.released}"/>
+                    <h:outputText value="#{bundle['dataset.versionUI.locallyFAIR']}"  title="#{bundle['dataset.versionUI.locallyFAIR.tip']}"  styleClass="label label-primary" rendered="#{dataverse.locallyFAIR}"/>
                 </div>
                 <div class="dataverseHeaderCell dataverseHeaderTagline" jsf:rendered="#{!empty dataverse.dataverseTheme.tagline and empty dataverse.dataverseTheme.linkUrl}">
                     <h:outputText escape="false" style="color:##{!empty dataverse.dataverseTheme.textColor ? dataverse.dataverseTheme.textColor : '666666'};" value="#{StringEscapeUtils:escapeHtml4(dataverse.dataverseTheme.tagline)}" />

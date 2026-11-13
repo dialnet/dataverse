@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<!-- Target of keycloak-js silent check-sso (platica-navbar.js): hands the Keycloak response back to the page -->
+<html>
+  <body>
+    <script>
+      parent.postMessage(location.href, location.origin);
+    </script>
+  </body>
+</html>

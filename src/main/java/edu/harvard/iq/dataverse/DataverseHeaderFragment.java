@@ -16,6 +16,7 @@ import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
 
 import edu.harvard.iq.dataverse.util.BundleUtil;
+import edu.harvard.iq.dataverse.util.PlaticaNavbarUtil;
 import edu.harvard.iq.dataverse.util.SystemConfig;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -373,6 +374,27 @@ public class DataverseHeaderFragment implements java.io.Serializable {
     private OIDCAuthProvider getOidcProvider() {
         AuthenticationProvider provider = authenticationSvc.getAuthenticationProvider(systemConfig.getDefaultAuthProvider());
         return provider instanceof OIDCAuthProvider ? (OIDCAuthProvider) provider : null;
+    }
+
+    /**
+     * Profile menu items for the PLATICA common header widget: the PLATICA web profile, My Data and,
+     * for superusers, the Dashboard. Labels use the current UI language.
+     */
+    public String getPlaticaNavbarMenuItemsJson() {
+        List<PlaticaNavbarUtil.MenuItem> items = new ArrayList<>();
+        items.add(new PlaticaNavbarUtil.MenuItem("profile", BundleUtil.getStringFromBundle("header.platica.profile"),
+                "eye", PlaticaNavbarUtil.getProfileUrl(), true));
+        items.add(new PlaticaNavbarUtil.MenuItem("my-data", BundleUtil.getStringFromBundle("header.user.selectTab.dataRelated"),
+                "document-text", "/dataverseuser.xhtml?selectTab=dataRelatedToMe", false));
+        if (dataverseSession.getUser().isSuperuser()) {
+            items.add(new PlaticaNavbarUtil.MenuItem("dashboard", BundleUtil.getStringFromBundle("header.dashboard"),
+                    "squares-2x2", "/dashboard.xhtml?dataverseId=" + settingsWrapper.getRootDataverse().getId(), false));
+        }
+        return PlaticaNavbarUtil.toMenuItemsJson(items);
+    }
+
+    public String getPlaticaNavbarLanguagesJson() {
+        return PlaticaNavbarUtil.toLanguagesJson(settingsWrapper.getConfiguredLocales());
     }
 
     public String getSignupUrl(String loginRedirect) {

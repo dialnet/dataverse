@@ -15,6 +15,7 @@ import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean.Key;
 import edu.harvard.iq.dataverse.util.BundleUtil;
 import edu.harvard.iq.dataverse.util.ListSplitUtil;
+import edu.harvard.iq.dataverse.util.PlaticaNavbarUtil;
 import edu.harvard.iq.dataverse.util.StringUtil;
 import edu.harvard.iq.dataverse.util.SystemConfig;
 import edu.harvard.iq.dataverse.UserNotification.Type;
@@ -127,7 +128,9 @@ public class SettingsWrapper implements java.io.Serializable {
     private String metricsUrl = null;
 
     private String publishDatasetDisclaimerText = null;
-    
+
+    private String submitForReviewDatasetDisclaimerText = null;
+
     private Boolean dataFilePIDSequentialDependent = null;
     
     private Boolean customLicenseAllowed = null;
@@ -476,6 +479,40 @@ public class SettingsWrapper implements java.io.Serializable {
         }
         return configuredLocales;
     }
+
+    // PLATICA common header widget (see PlaticaNavbarUtil)
+
+    public boolean isPlaticaNavbarEnabled() {
+        return PlaticaNavbarUtil.isNavbarEnabled();
+    }
+
+    public String getPlaticaNavbarScriptUrl() {
+        return PlaticaNavbarUtil.getNavbarScriptUrl().orElse(null);
+    }
+
+    public String getPlaticaProfileUrl() {
+        return PlaticaNavbarUtil.getProfileUrl();
+    }
+
+    public String getPlaticaKeycloakUrl() {
+        return PlaticaNavbarUtil.getKeycloakLocation().map(PlaticaNavbarUtil.KeycloakLocation::url).orElse(null);
+    }
+
+    public String getPlaticaKeycloakRealm() {
+        return PlaticaNavbarUtil.getKeycloakLocation().map(PlaticaNavbarUtil.KeycloakLocation::realm).orElse(null);
+    }
+
+    public String getPlaticaKeycloakClientId() {
+        return PlaticaNavbarUtil.getKeycloakClientId().orElse(null);
+    }
+
+    public String getLocaleCookieName() {
+        return PlaticaNavbarUtil.getLocaleCookieName();
+    }
+
+    public String getLocaleCookieDomain() {
+        return PlaticaNavbarUtil.getLocaleCookieDomain().orElse(null);
+    }
     
 
     public boolean isMakeDataCountDisplayEnabled() {
@@ -616,17 +653,11 @@ public class SettingsWrapper implements java.io.Serializable {
         return minRetentionDate;
     }
 
-    public LocalDate getMaxRetentionDate() {
-        Long maxMonths = 12000l; // Arbitrary cutoff at 1000 years - needs to keep maxDate < year 999999999 and
-        // somehwere 1K> x >10K years the datepicker widget stops showing a popup
-        // calendar
-        return LocalDate.now().plusMonths(maxMonths);
-    }
-
     public boolean isValidRetentionDate(Retention r) {
 
-        if (r.getDateUnavailable()==null ||
-            isRetentionAllowed() && r.getDateUnavailable().isAfter(getMinRetentionDate())) {
+        var date = r.getDateUnavailable();
+        if (date == null ||
+            isRetentionAllowed() && date.isAfter(getMinRetentionDate().minusDays(1))) {
             return true;
         }
 
@@ -660,15 +691,14 @@ public class SettingsWrapper implements java.io.Serializable {
             Retention newR = new Retention(((LocalDate) value), null);
             if (!isValidRetentionDate(newR)) {
                 String minDate = getMinRetentionDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-                String maxDate = getMaxRetentionDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
                 String msgString = BundleUtil.getStringFromBundle("retention.date.invalid",
-                        Arrays.asList(minDate, maxDate));
+                        Arrays.asList(minDate));
                 // If we don't throw an exception here, the datePicker will use it's own
                 // vaidator and display a default message. The value for that can be set by
                 // adding validatorMessage="#{bundle['retention.date.invalid']}" (a version with
                 // no params) to the datepicker
                 // element in file-edit-popup-fragment.html, but it would be better to catch all
-                // problems here (so we can show a message with the min/max dates).
+                // problems here (so we can show a message with the min date).
                 FacesMessage msg = new FacesMessage(msgString);
                 msg.setSeverity(FacesMessage.SEVERITY_ERROR);
                 throw new ValidatorException(msg);
@@ -884,5 +914,16 @@ public class SettingsWrapper implements java.io.Serializable {
 
     public Boolean isHasPublishDatasetDisclaimerText() {
         return !StringUtil.isEmpty(getPublishDatasetDisclaimerText());
+    }
+
+    public String getSubmitForReviewDatasetDisclaimerText() {
+        if (submitForReviewDatasetDisclaimerText == null) {
+            submitForReviewDatasetDisclaimerText = getValueForKey(Key.SubmitForReviewDatasetDisclaimerText);
+        }
+        return submitForReviewDatasetDisclaimerText;
+    }
+
+    public Boolean isHasSubmitForReviewDatasetDisclaimerText() {
+        return !StringUtil.isEmpty(getSubmitForReviewDatasetDisclaimerText());
     }
 }
