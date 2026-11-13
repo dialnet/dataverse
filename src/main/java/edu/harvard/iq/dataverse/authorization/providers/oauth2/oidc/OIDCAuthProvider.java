@@ -54,10 +54,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
-import jakarta.json.Json;
+import edu.harvard.iq.dataverse.util.json.JsonUtil;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonReader;
-import java.io.StringReader;
 
 /**
  * TODO: this should not EXTEND, but IMPLEMENT the contract to be used in {@link edu.harvard.iq.dataverse.authorization.providers.oauth2.OAuth2LoginBackingBean}
@@ -217,9 +215,8 @@ public class OIDCAuthProvider extends AbstractOAuth2AuthenticationProvider {
         if (tokenData == null || tokenData.getRawResponse() == null || tokenData.getRawResponse().isEmpty()) {
             return null;
         }
-        try (StringReader stringReader = new StringReader(tokenData.getRawResponse());
-             JsonReader jsonReader = Json.createReader(stringReader)) {
-            JsonObject tokenResponse = jsonReader.readObject();
+        try {
+            JsonObject tokenResponse = JsonUtil.getJsonObject(tokenData.getRawResponse());
             return tokenResponse.getString("id_token", null);
         } catch (RuntimeException ex) {
             return null;
@@ -258,7 +255,7 @@ public class OIDCAuthProvider extends AbstractOAuth2AuthenticationProvider {
             if (userInfo.isPresent()) {
                 OAuth2TokenData tokenData = new OAuth2TokenData();
                 if (tokens.getIDToken() != null) {
-                    tokenData.setRawResponse(Json.createObjectBuilder()
+                    tokenData.setRawResponse(JsonUtil.createObjectBuilder()
                             .add("id_token", tokens.getIDToken().getParsedString())
                             .build()
                             .toString());
@@ -296,6 +293,11 @@ public class OIDCAuthProvider extends AbstractOAuth2AuthenticationProvider {
         String idp = (idpObj != null) ? idpObj.toString() : null;
         String oidcUserId = (oidcUserIdObj != null) ? oidcUserIdObj.toString() : null;
 
+        // Extract the group membership claim, if the provider is configured to emit one.
+        // Null (claim absent or not a list of strings) means "no information", and must not
+        // be confused with an empty list, which means "member of nothing".
+        List<String> groups = userInfo.getStringListClaim(getGroupsClaimName());
+
         // Build display info from user attributes
         AuthenticatedUserDisplayInfo displayInfo = new AuthenticatedUserDisplayInfo(
                 userInfo.getGivenName(),
@@ -314,8 +316,17 @@ public class OIDCAuthProvider extends AbstractOAuth2AuthenticationProvider {
                 oidcUserId,
                 tokenData,
                 displayInfo,
-                null
+                null,
+                groups
         );
+    }
+
+    /**
+     * Name of the claim carrying the full group paths, as emitted by the IDP's group
+     * membership mapper. Defaults to {@code groups}.
+     */
+    static String getGroupsClaimName() {
+        return JvmSettings.OIDC_SYNC_GROUPS_CLAIM.lookupOptional().orElse("groups");
     }
 
     /**
