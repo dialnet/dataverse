@@ -3,12 +3,11 @@ package edu.harvard.iq.dataverse.authorization.providers.oauth2.oidc;
 import edu.harvard.iq.dataverse.settings.JvmSettings;
 import edu.harvard.iq.dataverse.util.testing.JvmSetting;
 import edu.harvard.iq.dataverse.util.testing.LocalJvmSettings;
-import jakarta.json.Json;
+import edu.harvard.iq.dataverse.util.json.JsonUtil;
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.io.StringReader;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -194,7 +193,7 @@ class KeycloakGroupSyncServiceBeanTest {
     class HasAttribute {
 
         private JsonObject group(String json) {
-            return Json.createReader(new StringReader(json)).readObject();
+            return JsonUtil.getJsonObject(json);
         }
 
         @Test

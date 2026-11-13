@@ -54,10 +54,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
-import jakarta.json.Json;
+import edu.harvard.iq.dataverse.util.json.JsonUtil;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonReader;
-import java.io.StringReader;
 
 /**
  * TODO: this should not EXTEND, but IMPLEMENT the contract to be used in {@link edu.harvard.iq.dataverse.authorization.providers.oauth2.OAuth2LoginBackingBean}
@@ -217,9 +215,8 @@ public class OIDCAuthProvider extends AbstractOAuth2AuthenticationProvider {
         if (tokenData == null || tokenData.getRawResponse() == null || tokenData.getRawResponse().isEmpty()) {
             return null;
         }
-        try (StringReader stringReader = new StringReader(tokenData.getRawResponse());
-             JsonReader jsonReader = Json.createReader(stringReader)) {
-            JsonObject tokenResponse = jsonReader.readObject();
+        try {
+            JsonObject tokenResponse = JsonUtil.getJsonObject(tokenData.getRawResponse());
             return tokenResponse.getString("id_token", null);
         } catch (RuntimeException ex) {
             return null;
@@ -258,7 +255,7 @@ public class OIDCAuthProvider extends AbstractOAuth2AuthenticationProvider {
             if (userInfo.isPresent()) {
                 OAuth2TokenData tokenData = new OAuth2TokenData();
                 if (tokens.getIDToken() != null) {
-                    tokenData.setRawResponse(Json.createObjectBuilder()
+                    tokenData.setRawResponse(JsonUtil.createObjectBuilder()
                             .add("id_token", tokens.getIDToken().getParsedString())
                             .build()
                             .toString());

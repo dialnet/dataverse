@@ -8,12 +8,10 @@ import jakarta.annotation.PostConstruct;
 import jakarta.ejb.ConcurrencyManagement;
 import jakarta.ejb.ConcurrencyManagementType;
 import jakarta.ejb.Singleton;
-import jakarta.json.Json;
+import edu.harvard.iq.dataverse.util.json.JsonUtil;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonReader;
 import jakarta.json.JsonValue;
 
-import java.io.StringReader;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -322,9 +320,7 @@ public class KeycloakAdminClient {
     }
 
     private static JsonValue parse(String body) {
-        try (JsonReader reader = Json.createReader(new StringReader(body))) {
-            return reader.readValue();
-        }
+        return JsonUtil.getJsonValue(body);
     }
 
     static String normalisePath(String groupPath) {
