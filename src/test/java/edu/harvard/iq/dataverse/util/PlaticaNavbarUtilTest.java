@@ -150,6 +150,14 @@ class PlaticaNavbarUtilTest {
     }
 
     @Test
+    void menuItemWithoutTranslationFallsBackToItsId() {
+        // BundleUtil returns null when the external lang directory lacks the key.
+        JsonObject item = JsonUtil.getJsonArray(PlaticaNavbarUtil.toMenuItemsJson(
+                List.of(new MenuItem("profile", null, "eye", "https://example.org", true)))).getJsonObject(0);
+        assertEquals("profile", item.getString("label"));
+    }
+
+    @Test
     void languagesJsonKeepsOrderAndNormalizesCase() {
         Map<String, String> locales = new LinkedHashMap<>();
         // Same languages PLATICA uses; "EN" checks case normalization

@@ -99,7 +99,8 @@ public final class PlaticaNavbarUtil {
         for (MenuItem item : items) {
             array.add(JsonUtil.createObjectBuilder()
                     .add("id", item.id())
-                    .add("label", item.label())
+                    // A key missing from an external lang directory must not take every page down.
+                    .add("label", java.util.Objects.requireNonNullElse(item.label(), item.id()))
                     .add("icon", item.icon())
                     .add("url", item.url())
                     .add("isExternal", item.external())
